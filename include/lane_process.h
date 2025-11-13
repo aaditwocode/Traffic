@@ -7,6 +7,7 @@
 
 // Traffic simulation constants
 #define VEHICLE_CROSS_TIME 2     // seconds
+#define BATCH_EXIT_SIZE 3        // number of vehicles that can exit simultaneously
 
 typedef enum {
     WAITING = 0,
