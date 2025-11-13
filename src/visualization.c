@@ -328,7 +328,6 @@ static void draw_lanes_window(LaneProcess lanes[4]) {
     mvwprintw(lanes_win, 0, 2, " Intersection Status ");
 
     const char* lane_names[] = {"NORTH", "SOUTH", "EAST ", "WEST "};
-    const char* state_names[] = {"RUNNING", "READY  ", "WAITING", "BLOCKED"};
     char queue_str[4][10];
     
     // --- Get all lane data first (to avoid holding locks while drawing) ---
@@ -366,20 +365,20 @@ static void draw_lanes_window(LaneProcess lanes[4]) {
 
 
     // --- Draw ASCII Intersection (Left Side) ---
-        mvwprintw(lanes_win, 2, 16, "N");  // North direction label
-    mvwprintw(lanes_win, 3, 13, "%s", queue_str[LANE_NORTH]);
-    mvwprintw(lanes_win, 4, 14, "|"); // Adjusted for alignment
+        mvwprintw(lanes_win, 2, 13, "N");  // North direction label
+    mvwprintw(lanes_win, 3, 12, "%s", queue_str[LANE_NORTH]);
+    mvwprintw(lanes_win, 4, 13, "|"); // Adjusted for alignment
     mvwprintw(lanes_win, 5, 5, "%s ---+--- %s", queue_str[LANE_WEST], queue_str[LANE_EAST]);
         mvwprintw(lanes_win, 5, 3, "W");  // West direction label
-        mvwprintw(lanes_win, 5, 28, "E");  // East direction label
-    mvwprintw(lanes_win, 6, 14, "|"); // Adjusted for alignment
-    mvwprintw(lanes_win, 7, 13, "%s", queue_str[LANE_SOUTH]);
-        mvwprintw(lanes_win, 8, 16, "S");  // South direction label
+        mvwprintw(lanes_win, 5, 23, "E");  // East direction label
+    mvwprintw(lanes_win, 6, 13, "|"); // Adjusted for alignment
+    mvwprintw(lanes_win, 7, 12, "%s", queue_str[LANE_SOUTH]);
+        mvwprintw(lanes_win, 8, 13, "S");  // South direction label
 
     // --- Draw Status Block (Right Side) ---
     int status_x_pos = 35;
-    mvwprintw(lanes_win, 2, status_x_pos, "LANE   | STATUS   | QUEUE | WAIT");
-    mvwprintw(lanes_win, 3, status_x_pos, "-------+----------+-------+------");
+    mvwprintw(lanes_win, 2, status_x_pos, "LANE   | STATUS   | QUEUE ");
+    mvwprintw(lanes_win, 3, status_x_pos, "-------+----------+-------");
 
     for (int i = 0; i < 4; i++) {
         // Set color based on state
@@ -405,11 +404,10 @@ static void draw_lanes_window(LaneProcess lanes[4]) {
         wattron(lanes_win, COLOR_PAIR(color_pair));
         
         // Draw the formatted status line with better visual indicators
-        mvwprintw(lanes_win, 4 + i, status_x_pos, "%-6s | %-8s | %-5d | %ds", 
+        mvwprintw(lanes_win, 4 + i, status_x_pos, "%-6s | %-8s | %-5d", 
                   lane_names[i], 
                   state_indicator,        // --- NEW: Use indicator instead of state name ---
-                  queues[i], 
-                  waits[i]);
+                  queues[i]);
         
         wattroff(lanes_win, COLOR_PAIR(color_pair));
     }

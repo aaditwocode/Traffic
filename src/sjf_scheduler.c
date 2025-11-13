@@ -1,5 +1,6 @@
 #include "../include/scheduler.h"
 #include "../include/lane_process.h"
+#include "../include/trafficguru.h"
 #include <stdlib.h>
 #include <limits.h>
 #include <float.h>

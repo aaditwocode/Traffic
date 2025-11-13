@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 600
 #include "../include/lane_process.h"
 #include "../include/synchronization.h"
+#include "../include/trafficguru.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
