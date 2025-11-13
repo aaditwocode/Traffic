@@ -45,7 +45,13 @@ void* vehicle_generator_loop(void* arg) {
             // --- END DEADLOCK FIX ---
             
             // We assume add_vehicle_to_lane is thread-safe (uses lane->queue_lock)
-            add_vehicle_to_lane(lane, new_vehicle_id); 
+            add_vehicle_to_lane(lane, new_vehicle_id);
+
+                    // ---- EMERGENCY VEHICLE GENERATION ----
+                    // Periodically generate emergency vehicles (1 in 100 chance)
+                    if ((rand() % EMERGENCY_PROBABILITY) == 0) {
+                                    trigger_emergency(g_traffic_system, lane_idx);
+                                }
             
             // --- "Wake up" the lane (this is also a lock) ---
             pthread_mutex_lock(&lane->queue_lock);
