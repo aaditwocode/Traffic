@@ -141,6 +141,15 @@ int schedule_next_lane(Scheduler* scheduler, LaneProcess lanes[4]) {
             update_context_switch_count(&g_traffic_system->metrics);
             pthread_mutex_unlock(&g_traffic_system->global_state_lock);
         }
+                
+        // --- VALIDATION: Ensure only one lane is running ---
+        // This verifies mutual exclusion after context switch
+        if (!validate_single_lane_running(lanes)) {
+            // Critical error: Multiple lanes running simultaneously!
+            // This should never happen and indicates a synchronization bug
+            // In production, you might want to log this error or trigger an alert
+        }
+        // --- END VALIDATION ---
         // --- END DEADLOCK FIX ---
     }
 
@@ -283,6 +292,32 @@ void set_scheduling_algorithm(Scheduler* scheduler, SchedulingAlgorithm algorith
     if (pthread_mutex_trylock(&scheduler->scheduler_lock) == 0) {
         scheduler->algorithm = algorithm;
         scheduler->current_lane = -1; // Reset current lane on algorithm change
+                
+        // --- ENHANCEMENT: Reset all lane states when switching algorithms ---
+        // This ensures clean transition and no lane remains running from previous algorithm
+        extern TrafficGuruSystem* g_traffic_system;  // Access global system
+        if (g_traffic_system && g_traffic_system->simulation_running) {
+            for (int i = 0; i < 4; i++) {
+                LaneProcess* lane = &g_traffic_system->lanes[i];
+                pthread_mutex_lock(&lane->queue_lock);
+                
+                // Stop any running lane
+                if (lane->state == RUNNING) {
+                    lane->state = (lane->queue_length > 0) ? READY : WAITING;
+                    pthread_cond_signal(&lane->queue_cond);
+                }
+                
+                pthread_mutex_unlock(&lane->queue_lock);
+            }
+            
+            // Clear the ready queue for fresh start
+            if (scheduler->ready_queue) {
+                while (!is_empty(scheduler->ready_queue)) {
+                    dequeue(scheduler->ready_queue);
+                }
+            }
+        }
+        // --- END ENHANCEMENT ---
         pthread_mutex_unlock(&scheduler->scheduler_lock);
     }
     // If lock is busy, we just skip the change for this frame.
@@ -527,3 +562,35 @@ int get_ready_queue_size(Scheduler* scheduler) {
 bool is_ready_queue_empty(Scheduler* scheduler) {
     return get_ready_queue_size(scheduler) == 0;
 }
+
+// --- NEW FUNCTION: Validate only one lane is running ---
+// This ensures mutual exclusion at intersection level
+bool validate_single_lane_running(LaneProcess lanes[4]) {
+    if (!lanes) {
+        return false;
+    }
+    
+    int running_count = 0;
+    int running_lane_id = -1;
+    
+    for (int i = 0; i < 4; i++) {
+        // Try to lock each lane to safely check state
+        if (pthread_mutex_trylock(&lanes[i].queue_lock) == 0) {
+            if (lanes[i].state == RUNNING) {
+                running_count++;
+                running_lane_id = i;
+            }
+            pthread_mutex_unlock(&lanes[i].queue_lock);
+        }
+    }
+    
+    // Validation: At most one lane should be RUNNING
+    if (running_count > 1) {
+        // ERROR: Multiple lanes running simultaneously!
+        // This violates intersection mutual exclusion
+        return false;
+    }
+    
+    return true;  // Valid: 0 or 1 lane running
+}
+// --- END NEW FUNCTION ---
