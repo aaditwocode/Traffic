@@ -50,8 +50,11 @@ void* vehicle_generator_loop(void* arg) {
                     // ---- EMERGENCY VEHICLE GENERATION ----
                     // Periodically generate emergency vehicles (1 in 100 chance)
                     if ((rand() % EMERGENCY_PROBABILITY) == 0) {
-                                    trigger_emergency(g_traffic_system, lane_idx);
-                                }
+                    EmergencyVehicle* emergency = generate_random_emergency();
+                    if (emergency) {
+                        emergency->lane_id = lane_idx;
+                        add_emergency_vehicle(&(g_traffic_system->emergency_system), emergency);
+                    }                                }
             
             // --- "Wake up" the lane (this is also a lock) ---
             pthread_mutex_lock(&lane->queue_lock);
