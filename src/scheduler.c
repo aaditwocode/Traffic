@@ -582,10 +582,10 @@ bool validate_single_lane_running(LaneProcess lanes[4]) {
                 running_count++;
             }
             pthread_mutex_unlock(&lanes[i].queue_lock);
-        }
     }
     
     // Validation: At most one lane should be RUNNING
+    
     if (running_count > 1) {
         // ERROR: Multiple lanes running simultaneously!
         // This violates intersection mutual exclusion
